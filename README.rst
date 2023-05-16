@@ -1,9 +1,12 @@
-Template for the Read the Docs tutorial
-=======================================
+Tools for Semi-discrete optimal transport
+=========================================
 
-This GitHub template includes fictional Python library
-with some basic Sphinx docs.
+This repository contains tools to solve problems related to semi-discrete optimal transportation.
 
-Read the tutorial here:
+These tools have been designed for speed and robustness, and work with most scientific programming languages (C++/Python/Julia) on most of the common hardware architectures (CPU/GPU/...).
 
-https://docs.readthedocs.io/en/stable/tutorial/
+See documentation here:
+
+https://sd-ot.readthedocs.io/en/latest/
+
+
