@@ -141,12 +141,13 @@ In the following example, we make several computations that use the same source 
    for num_iter in range(4):
       # target density
       fo.set_target_density(
+         # here we use a symbolic expression
          sdot.make_symbolic_density(
             lambda x, y: - 10 ** num_iter * sdot.exp(x * x + y * y)
          )
       )
 
-      # Computations that are specific to the source density are kept.
+      # Computations that are specific to the source density are kept from each iteration to the next.
       # By default, the new Kantorovitch potentials are computed from those of the previous iteration.
       fo.run()
 
