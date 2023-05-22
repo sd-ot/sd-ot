@@ -156,6 +156,13 @@ In the following example, we make several computations that use the same source 
 
 
 
+Other transport costs
+---------------------
+
+Unbalanced
+
+
+
 Large number of unknowns
 ------------------------
 
