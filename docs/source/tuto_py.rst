@@ -56,6 +56,10 @@ where the arrows go from the dirac positions to the centroids of the correspondi
 Another target density
 ----------------------
 
+.. warning::
+   Pour Quentin: parler d'une densité est peut être une mauvaise idée dans la mesure où la masse n'égale pas toujours 1 dans nos exemples. Est-ce qu'on aurait un mot plus approprié ?
+
+
 In the previous example, the target density was a simple characteristic function, but it is possible to define and use more complex ones. For instance, `sdot.make_uniform_grid_piecewise_polynomial` enable to define piecewise polynomial function on a regular grid
 
 .. code-block:: python
@@ -151,21 +155,100 @@ In the following example, we make several computations that use the same source 
       # By default, the new Kantorovitch potentials are computed from those of the previous iteration.
       fo.run()
 
-      # several output file to make an animation
+      # several output files, to make an animation
       tm.write_vtk( f"ex_{ num_iter }.vtk" )
 
 
 
-Other transport costs
----------------------
+Transport cost
+--------------
 
-Unbalanced
+By default, sdot uses the L2 norm for the transport cost (:math:`\int ||x - y||^2_2 d\rho`). It is possible to define another transport costs using names (e.g. "L2", ...) or functions.
 
+Functions to define transport costs take an input argument that contains several attributes: `x` is the position of a source item, `y` is the position of a target item, `w` is the kantorovitch potential and `m` is the created mass (which will be 0 if not used). Additionally, there are shortcuts, like `d_2` for instance which equals :math:`||x - y||_2`.
+
+.. warning::
+   Pour Quentin: "item" n'est peut-être pas le meilleur terme mais je n'ai pas su quoi mettre...
+
+Here is an example where the cost becomes infinite if the square of the distance is greater than the Kantorovitch potential.
+
+.. code-block:: python
+
+   import numpy, sdot
+
+   target_radius = 0.05
+   nb_diracs = 100
+
+   tm = sdot.find_optimal_transport_map(
+      sdot.make_weighted_diracs( 
+         numpy.random.rand(nb_diracs, 2),
+         # here we specify the mass of each dirac individually
+         np.ones(nb_diracs) * np.pi * target_radius ** 2
+      ),
+      # we use sdot objects to make a symbolic function that will be compiled
+      # to produce an optimized code
+      transport_cost=lambda p: p.d_2 ** 2 + sdot.inf * (p.d_2 ** 2 > p.w),
+   )
+
+   tm.show()
+
+It produces something like:
+
+.. image:: images/ex_r2.png
+
+
+Here is an example with unbalanced mass tranport to illustrate the use of the `m` attribute:
+
+.. code-block:: python
+
+   import numpy, sdot
+
+   nb_diracs = 100
+
+   tm = sdot.find_optimal_transport_map(
+      sdot.make_weighted_diracs( 
+         numpy.random.rand(nb_diracs,2),
+         # the mass of the source distribution is not equal to the mass of the target distribution
+         np.ones(nb_diracs) / nb_diracs
+      ),
+      # target distribution
+      sdot.make_symbolic_density(
+         lambda p: - sdot.exp(sdot.norm_2(p) ** 2)
+      )
+      # creation or destruction of the mass is allowed in this question
+      transport_cost=lambda p: p.d_2 ** 2 + 10 * p.m,
+   )
+
+   tm.show()
+
+.. warning::
+   Pour Quentin: cette exemple ne fonctionne pas encore et je ne suis même pas certain qu'on soit sur la bonne formule pour le coût. À discuter.
 
 
 Large number of unknowns
 ------------------------
 
+To handle things like MPI calls, out-of-core data, ... sdot tries to be as flexible as possible, notably in terms of framework choice. Currently, we support Dask and CuPy but if one needs to use sdot with another libraries we will be happy to develop it.
 
+Here is an example with data specified with Dask:
+
+
+.. code-block:: python
+
+   from dask.distributed import Client
+   import dask.array as da
+   import numpy, sdot
+
+   client = Client(n_workers=4)
+
+   # here we take a dask array as input
+   tm = sdot.find_optimal_transport_map(
+      sdot.make_weighted_diracs( 
+         da.random.rand((1000000,2), chunks=4)
+      ),
+   )
+
+   # transport_cost_for_each_dirac will return a Dask array
+   print(da.sum(tm.transport_cost_for_each_dirac()))
 
 
