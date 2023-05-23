@@ -1,9 +1,9 @@
 Welcome to Sdot's documentation!
 ================================
 
-**Sdot** is a set of tools to help solve problems related to semi-discrete optimal transportation with quadratic cost.
+**Sdot** is a set of tools to help solve problems related to semi-discrete optimal transportation.
 
-These tools have been designed for speed and robustness and work for any number of dimension (see :doc:`benchmarks` for the consequences in terms of speed).
+These tools have been designed for speed (see :doc:`benchmarks`) and robustness. They work for any (reasonable) number of dimension.
 
 The core is written in C++ and Cuda (optionnal) and there are wrappers for most of the common scientific programming languages. 
 

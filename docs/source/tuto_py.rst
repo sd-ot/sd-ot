@@ -36,7 +36,7 @@ In this first example, we look for a transport map of a series of weighted dirac
 
    # optimize the kantorovitch potential
    tm = sdot.find_optimal_transport_map(
-      sdot.make_weighted_diracs(
+      sdot.make_dirac_distribution(
          numpy.random.rand(nb_diracs,nb_dims) * 0.2
       )
    )
@@ -60,7 +60,7 @@ Another target density
    Pour Quentin: parler d'une densité est peut être une mauvaise idée dans la mesure où la masse n'égale pas toujours 1 dans nos exemples. Est-ce qu'on aurait un mot plus approprié ?
 
 
-In the previous example, the target density was a simple characteristic function, but it is possible to define and use more complex ones. For instance, `sdot.make_uniform_grid_piecewise_polynomial` enable to define piecewise polynomial function on a regular grid
+In the previous example, the target density was a simple characteristic function, but it is possible to define and use more complex ones. For instance, `sdot.make_uniform_grid_piecewise_polynomial_distribution` enable to define piecewise polynomial function on a regular grid
 
 .. code-block:: python
 
@@ -74,11 +74,11 @@ In the previous example, the target density was a simple characteristic function
    # find how to move mass to the corresponding target density
    tm = sdot.find_optimal_transport_map(
       # source density
-      sdot.make_weighted_diracs(
+      sdot.make_dirac_distribution(
          numpy.random.rand(50,2)
       ),
       # target density
-      sdot.make_uniform_grid_piecewise_polynomial(
+      sdot.make_uniform_grid_piecewise_polynomial_distribution(
          img, # value [x,y,n] where n is the number of coefficients of the polynomial
               # of 1, X, Y, X*X, X*Y, Y*Y, ... where X and Y equal 0 and 1 on the edges of pixels
          [0,0], # bottom left coordinates
@@ -107,10 +107,10 @@ Here is the same problem in 3D:
    img = numpy.exp(-10 * sum(v**2 for v in g))
 
    tm = sdot.find_optimal_transport_map(
-      sdot.make_weighted_diracs(
+      sdot.make_dirac_distribution(
          numpy.random.rand(50,3)
       ),
-      sdot.make_uniform_grid_piecewise_polynomial(
+      sdot.make_uniform_grid_piecewise_polynomial_distribution(
          img,
          [0,0,0],
          [1,1,1]
@@ -137,7 +137,7 @@ In the following example, we make several computations that use the same source 
 
    fo = sdot.OptimalTransportMapFinder(
       # source density
-      sdot.make_weighted_diracs(
+      sdot.make_dirac_distribution(
          numpy.random.rand(50,2)
       )
    )
@@ -180,7 +180,7 @@ Here is an example where the cost becomes infinite if the square of the distance
    nb_diracs = 100
 
    tm = sdot.find_optimal_transport_map(
-      sdot.make_weighted_diracs( 
+      sdot.make_dirac_distribution( 
          numpy.random.rand(nb_diracs, 2),
          # here we specify the mass of each dirac individually
          np.ones(nb_diracs) * np.pi * target_radius ** 2
@@ -206,7 +206,7 @@ Here is an example with unbalanced mass tranport to illustrate the use of the `m
    nb_diracs = 100
 
    tm = sdot.find_optimal_transport_map(
-      sdot.make_weighted_diracs( 
+      sdot.make_dirac_distribution( 
          numpy.random.rand(nb_diracs,2),
          # the mass of the source distribution is not equal to the mass of the target distribution
          np.ones(nb_diracs) / nb_diracs
@@ -243,7 +243,7 @@ Here is an example with data specified with Dask:
 
    # here we take a dask array as input
    tm = sdot.find_optimal_transport_map(
-      sdot.make_weighted_diracs( 
+      sdot.make_dirac_distribution( 
          da.random.rand((1000000,2), chunks=4)
       ),
    )
