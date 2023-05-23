@@ -192,6 +192,9 @@ Expressions may use the following symbol: `sdot.source_pos` is the position of a
 
 Here is an example where the cost becomes infinite if the square of the distance is greater than the Kantorovitch potential.
 
+.. warning::
+   Pour Quentin: l'exemple me paraît un peu pourri en fait dans la mesure où c'est le fait que la masse de la source est plus petite que la masse de la cible qui fait apparaître les cercles, même en gardant le coût précédant.
+
 .. code-block:: python
 
    import numpy, sdot
@@ -202,9 +205,12 @@ Here is an example where the cost becomes infinite if the square of the distance
    tm = sdot.find_optimal_transport_map(
       sdot.dirac_distribution( 
          numpy.random.rand(nb_diracs, 2),
-         # for this example we specify the mass of each dirac individually
-         np.ones(nb_diracs) * np.pi * target_radius ** 2
+         # for this example we specify the mass of each dirac, individually
+         numpy.ones(nb_diracs) * numpy.pi * target_radius ** 2
       ),
+      # we specify the target distribution in order to prescribe the target mass
+      sdot.bounded(1)
+      # and here is the transport cost expression
       transport_cost = sdot.distance_2 ** 2 + sdot.inf * (sdot.distance_2 ** 2 > sdot.kantorovitch_potential),
    )
 
@@ -229,7 +235,7 @@ Here is an example with unbalanced mass tranport to illustrate the use of the `s
       sdot.dirac_distribution( 
          numpy.random.rand(nb_diracs,2),
          # the mass of the source distribution is not equal to the mass of the target distribution
-         np.ones(nb_diracs) / nb_diracs
+         numpy.ones(nb_diracs) / nb_diracs
       ),
       # target distribution
       sdot.exp(- sdot.norm_2(sdot.coords) ** 2)
