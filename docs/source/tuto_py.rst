@@ -88,6 +88,9 @@ In the following example, one will use a bounded gaussian function:
 
    import numpy, sdot
 
+   nb_diracs = 500
+   nb_dims = 2
+
    # symbolic formula for the source density.
    source = sdot.exp(- 10 * sdot.sum(- sdot.coords ** 2)) * \
             # Rq/question pour Quentin: j'imagine qu'on pourrait traiter des domaines non bornés,
@@ -121,9 +124,9 @@ Here is another example where the source density is defined piecewise on an unif
    import numpy, sdot, PIL.Image
 
    # one loads an image and makes sure that the mass is equal to 1
-   img = np.asarray(PIL.Image.open("ot.png"))
-   img = np.sum(img * 1.0 + 25, axis=2)
-   img = img / np.mean(img)
+   img = numpy.asarray(PIL.Image.open("ot.png"))
+   img = numpy.sum(img * 1.0 + 25, axis=2)
+   img = img / numpy.mean(img)
 
    # find how to move mass to the corresponding target density
    tm = sdot.compute_optimal_transport_map(
@@ -133,38 +136,43 @@ Here is another example where the source density is defined piecewise on an unif
          [[1, 0], [0, 1]] # axes
       ),
       sdot.weighted_point_cloud(
-         numpy.random.rand(50, 2)
+         numpy.random.rand(50, 2),
+         numpy.one(50) / 50
       )
    )
 
    tm.show(arrows=True, line_width_arrows=2)
 
 .. image:: images/ex_img.png
+   :width: 300
+   :align: center
 
 
 An example in 3D
 ----------------
 
-Sdot tries to find the dimension according to the input data. This is an example of a semi-discrete 3D computation:
+Sdot tries to find the dimension according to the input data, and in most of the cases, the API calls stay unchanged.
+
+This is an example of a semi-discrete 3D computation:
 
 .. code-block:: python
 
    import numpy, sdot
 
-   t = numpy.linspace(-1,1,20)
-   g = numpy.meshgrid(t,t,t)
-   img = numpy.exp(-10 * sum(v**2 for v in g))
+   nb_diracs = 500
+
+   source = sdot.exp(- 10 * sdot.sum(- sdot.coords ** 2)) * \
+            sdot.is_inside(sdot.parallelogram([-1, -1, -1], [[2, 0, 0], [0, 2, 0], [0, 0, 2]]))
+
+   target = sdot.weighted_point_cloud(
+      numpy.random.rand(nb_diracs, 3) * 2 - 1,
+      numpy.ones(nb_diracs) / nb_diracs * sdot.mass(source)
+   )
 
    tm = sdot.compute_optimal_transport_map(
-      sdot.make_weighted_diracs(
-         numpy.random.rand(50,3)
-      ),
-      sdot.uniform_grid_piecewise_polynomial_distribution(
-         img,
-         [0,0,0],
-         [1,1,1]
-      )
-      # dim = ... to force the space dimension
+      source, 
+      target
+      # optionaly, the `dim` argument can be used to force the space dimension
    )
 
    # we write a vtk file to open it later in tools like paraview
@@ -180,16 +188,16 @@ Using sdot objects
 
 Most of the functions use instances of Sdot objects to do the actual work. Using them directly may give access to some optimizations, both in term of computation time and code size.
 
-In the following example, we compute several transport map that use the same source density. Using instances that are kept between iterations allows Sdot to cache the unmodified computations and use previous ones as starting points.
+In the following example, we compute several transport maps that use the same source density. Using instances that are kept between iterations allows Sdot to cache some computations and use previous ones as starting points.
 
 
 .. code-block:: python
 
    import numpy, sdot
 
-   # same input args than sdot.find_optimal_transport_map
-   fo = sdot.OptimalTransportMapFinder(
-      sdot.dirac_distribution(
+   # same input args than sdot.compute_optimal_transport_map
+   fo = sdot.OptimalTransportMapComputer(
+      sdot.weighted_point_cloud(
          numpy.random.rand(50,2)
       )
    )
