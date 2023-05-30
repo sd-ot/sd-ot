@@ -55,6 +55,8 @@ In this first example, we look for a 2D transport map from the characteristic fu
          # weights (so that masses of the source and target dentities are the same)
          numpy.ones(nb_diracs) / nb_diracs
       )
+      # if not specified, sdot creates a target based on the 1^dim cube,
+      # with the same mass than the source
    )
 
    # visualization (arrows are possible because at least one density is a sum of diracs)
@@ -63,6 +65,8 @@ In this first example, we look for a 2D transport map from the characteristic fu
 This gives a representation like:
 
 .. image:: images/ex_arrow.png
+   :width: 300
+   :align: center
 
 where the arrows go from the centroids of the cells (subspace assigned to a given dirac) the dirac positions.
 
@@ -106,6 +110,8 @@ In the following example, one will use a bounded gaussian function:
 This gives a representation like:
 
 .. image:: images/ex_exp.png
+   :width: 300
+   :align: center
 
 
 Here is another example where the source density is defined piecewise on an uniform grid:
@@ -139,9 +145,7 @@ Here is another example where the source density is defined piecewise on an unif
 An example in 3D
 ----------------
 
-Changing
-
-Here is the same problem in 3D:
+Sdot tries to find the dimension according to the input data. This is an example of a semi-discrete 3D computation:
 
 .. code-block:: python
 
@@ -155,66 +159,156 @@ Here is the same problem in 3D:
       sdot.make_weighted_diracs(
          numpy.random.rand(50,3)
       ),
-      sdot.make_uniform_grid_piecewise_polynomial(
+      sdot.uniform_grid_piecewise_polynomial_distribution(
          img,
          [0,0,0],
          [1,1,1]
       )
+      # dim = ... to force the space dimension
    )
 
-   # we write a vtk file to open it in paraview
+   # we write a vtk file to open it later in tools like paraview
    tm.write_vtk("ex.vtk")
 
 .. image:: images/ex_3d.png
+   :width: 300
+   :align: center
 
 
 Using sdot objects
 ------------------
 
-Most of the functions use objects instances to do the actual work. Using them directly may give access to some optimizations in term of computation time and code size.
+Most of the functions use instances of Sdot objects to do the actual work. Using them directly may give access to some optimizations, both in term of computation time and code size.
 
-In the following example, we make several computations that use the same source density. Using method calls enable `sdot` to keep track of the changes and cache the unmodified computations.
+In the following example, we compute several transport map that use the same source density. Using instances that are kept between iterations allows Sdot to cache the unmodified computations and use previous ones as starting points.
 
 
 .. code-block:: python
 
    import numpy, sdot
 
+   # same input args than sdot.find_optimal_transport_map
    fo = sdot.OptimalTransportMapFinder(
-      # source density
-      sdot.make_weighted_diracs(
+      sdot.dirac_distribution(
          numpy.random.rand(50,2)
       )
    )
 
    for num_iter in range(4):
-      # target density
+      # set or modify the target density
       fo.set_target_density(
          # here we use a symbolic expression
-         sdot.make_symbolic_density(
-            lambda x, y: - 10 ** num_iter * sdot.exp(x * x + y * y)
-         )
+         sdot.bounded(- 10 ** num_iter * sdot.exp(sdot.sum(sdot.coords ** 2)))
       )
 
       # Computations that are specific to the source density are kept from each iteration to the next.
       # By default, the new Kantorovitch potentials are computed from those of the previous iteration.
       fo.run()
 
-      # several output file to make an animation
-      tm.write_vtk( f"ex_{ num_iter }.vtk" )
+      # animation
+      tm.write_vtk(f"ex_{ num_iter }.vtk")
 
 
+.. image:: images/ex_inst.gif
+   :width: 300
+   :align: center
 
-Other transport costs
----------------------
 
-Unbalanced
+Transport cost
+--------------
 
+By default, sdot uses the L2 norm for the transport cost (:math:`\int ||x - y||^2_2 d\rho`). Of course, it is possible to define another transport costs. It can be done using names for the most common ones (e.g. "L2", ...) or symbolic expression to get more flexibility.
+
+Expressions may use the following symbol: `sdot.source_pos` is the position of a source item, `sdot.target_pos` is the position of a target item, `sdot.kantorovitch_potential` is the kantorovitch potential and `sdot.created_mass` is the created mass (which is enforce to be 0 if not used in the cost expression). Additionally, there are shortcuts, like for instance `sdot.distance_2` which is the norm 2 of the distance between `sdot.source_pos` and `sdot.target_pos`.
+
+.. warning::
+   Pour Quentin: "item" n'est peut-être pas le meilleur terme mais je n'ai pas su quoi mettre...
+
+Here is an example where the cost becomes infinite if the square of the distance is greater than the Kantorovitch potential.
+
+.. warning::
+   Pour Quentin: l'exemple me paraît un peu pourri en fait dans la mesure où c'est le fait que la masse de la source est plus petite que la masse de la cible qui fait apparaître les cercles, même en gardant le coût précédant.
+
+.. code-block:: python
+
+   import numpy, sdot
+
+   target_radius = 0.05
+   nb_diracs = 100
+
+   tm = sdot.find_optimal_transport_map(
+      sdot.dirac_distribution( 
+         numpy.random.rand(nb_diracs, 2),
+         # for this example we specify the mass of each dirac, individually
+         numpy.ones(nb_diracs) * numpy.pi * target_radius ** 2
+      ),
+      # we specify the target distribution in order to prescribe the target mass
+      sdot.bounded(1)
+      # and here is the transport cost expression
+      transport_cost = sdot.distance_2 ** 2 + sdot.inf * (sdot.distance_2 ** 2 > sdot.kantorovitch_potential),
+   )
+
+   tm.show()
+
+It produces something like:
+
+.. image:: images/ex_r2.png
+   :width: 300
+   :align: center
+
+
+Here is an example with unbalanced mass tranport to illustrate the use of the `sdot.created_mass` symbol:
+
+.. code-block:: python
+
+   import numpy, sdot
+
+   nb_diracs = 100
+
+   tm = sdot.find_optimal_transport_map(
+      sdot.dirac_distribution( 
+         numpy.random.rand(nb_diracs,2),
+         # the mass of the source distribution is not equal to the mass of the target distribution
+         numpy.ones(nb_diracs) / nb_diracs
+      ),
+      # target distribution
+      sdot.exp(- sdot.norm_2(sdot.coords) ** 2)
+      # creation or destruction of the mass is allowed in this example
+      transport_cost = p.distance_2 ** 2 + 10 * p.created_mass,
+   )
+
+   tm.show()
+
+.. warning::
+   Pour Quentin: cette exemple ne fonctionne pas encore et je ne suis même pas certain qu'on soit sur le bon genre de formule pour le coût. À discuter.
 
 
 Large number of unknowns
 ------------------------
 
+To handle things like MPI calls, out-of-core data, GPUs, ... sdot tries to be as flexible as possible, notably in terms of framework choice.
 
+Currently, for python, we support Dask and CuPy but if one needs to use sdot with another libraries we will be happy to develop the interfaces.
+
+Here is an example with data specified with Dask:
+
+
+.. code-block:: python
+
+   from dask.distributed import Client
+   import dask.array as da
+   import numpy, sdot
+
+   client = Client(n_workers=4)
+
+   # here we take a dask array as input
+   tm = sdot.find_optimal_transport_map(
+      sdot.dirac_distribution( 
+         da.random.rand((1000000,2), chunks=4)
+      ),
+   )
+
+   # in this case, transport_cost_for_each_dirac will return a Dask array
+   print(da.sum(tm.transport_cost_for_each_dirac()))
 
 
