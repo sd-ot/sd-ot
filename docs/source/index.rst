@@ -5,7 +5,7 @@ Welcome to Sdot's documentation!
 
 These tools have been designed for speed and robustness and work for any number of dimension (see :doc:`benchmarks` for the consequences in terms of speed).
 
-The core is written in C++ and Cuda (optionnal) and there are wrappers for most of the common scientific programming languages. 
+The core is written in C++ and Cuda (optionnally) and there are wrappers for most of the common scientific programming languages. 
 
 If you're new to semi-discrete optimal transport see :doc:`sd-intro` for some generic mathematical explanations and :doc:`showcases` to get a taste of what can be done using this kind of tools.
 
