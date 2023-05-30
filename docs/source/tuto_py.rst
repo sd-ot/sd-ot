@@ -222,8 +222,16 @@ In the following example, we compute several transport maps that use the same so
    :align: center
 
 
+Partial transport
+-----------------
+
+By default, sdot *checks* if the masses of the source and the target densities are the same. However, it is possible to say that the masses are not the same, and Sdot will ...
+
+
 Transport cost
 --------------
+
+
 
 By default, sdot uses the L2 norm for the transport cost (:math:`\int ||x - y||^2_2 d\rho`). Of course, it is possible to define another transport costs. It can be done using names for the most common ones (e.g. "L2", ...) or symbolic expression to get more flexibility.
 
